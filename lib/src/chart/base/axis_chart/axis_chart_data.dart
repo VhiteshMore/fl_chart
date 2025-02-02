@@ -30,6 +30,7 @@ abstract class AxisChartData extends BaseChartData with EquatableMixin {
     required super.touchData,
     ExtraLinesData? extraLinesData,
     this.horizontalZoomConfig = const ZoomConfig(),
+    this.scrollController,
   })  : gridData = gridData ?? const FlGridData(),
         rangeAnnotations = rangeAnnotations ?? const RangeAnnotations(),
         baselineX = baselineX ?? 0,
@@ -64,6 +65,8 @@ abstract class AxisChartData extends BaseChartData with EquatableMixin {
   final ExtraLinesData extraLinesData;
 
   final ZoomConfig horizontalZoomConfig;
+
+  ScrollController? scrollController;
 
   /// Used for equality check, see [EquatableMixin].
   @override
@@ -321,6 +324,7 @@ class AxisTitles with EquatableMixin {
     this.axisNameSize = 16,
     this.sideTitles = const SideTitles(),
     this.drawBelowEverything = true,
+    this.isScrollable = false,
   });
 
   /// Determines the size of [axisName]
@@ -337,6 +341,8 @@ class AxisTitles with EquatableMixin {
   ///
   /// In the future, we will convert tooltips to a widget, that would solve this problem.
   final bool drawBelowEverything;
+
+  final bool isScrollable;
 
   /// If there is something to show as axisTitles, it returns true
   bool get showAxisTitles => axisNameWidget != null && axisNameSize != 0;

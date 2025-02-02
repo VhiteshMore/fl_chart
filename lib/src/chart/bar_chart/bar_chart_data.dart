@@ -47,6 +47,8 @@ class BarChartData extends AxisChartData with EquatableMixin {
     RangeAnnotations? rangeAnnotations,
     super.backgroundColor,
     ExtraLinesData? extraLinesData,
+    super.horizontalZoomConfig,
+    super.scrollController,
   })  : barGroups = barGroups ?? const [],
         groupsSpace = groupsSpace ?? 16,
         alignment = alignment ?? BarChartAlignment.spaceEvenly,
@@ -94,6 +96,8 @@ class BarChartData extends AxisChartData with EquatableMixin {
     double? baselineY,
     Color? backgroundColor,
     ExtraLinesData? extraLinesData,
+    ZoomConfig? horizontalZoomConfig,
+    ScrollController? scrollController,
   }) {
     return BarChartData(
       barGroups: barGroups ?? this.barGroups,
@@ -109,6 +113,8 @@ class BarChartData extends AxisChartData with EquatableMixin {
       baselineY: baselineY ?? this.baselineY,
       backgroundColor: backgroundColor ?? this.backgroundColor,
       extraLinesData: extraLinesData ?? this.extraLinesData,
+      horizontalZoomConfig: horizontalZoomConfig ?? this.horizontalZoomConfig,
+      scrollController: scrollController ?? this.scrollController,
     );
   }
 

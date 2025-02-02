@@ -35,17 +35,17 @@ class AxisChartScaffoldWidget extends StatefulWidget {
 }
 
 class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
-  late ScrollController scrollController;
+  // late ScrollController scrollController;
 
   @override
   void initState() {
-    scrollController = ScrollController();
+    widget.data.scrollController ??= ScrollController();
     super.initState();
   }
 
   @override
   void dispose() {
-    scrollController.dispose();
+    widget.data.scrollController?.dispose();
     super.dispose();
   }
 
@@ -100,9 +100,9 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
               ? widget.data.borderData.border
               : null,
         ),
-        child: switch (widget.data.horizontalZoomConfig.enabled) {
+        child: switch (widget.data.scrollController != null) {
           true => SingleChildScrollView(
-              controller: scrollController,
+              controller: widget.data.scrollController,
               scrollDirection: Axis.horizontal,
               child: SizedBox(
                 width: largeChartWidth,
@@ -123,11 +123,12 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
 
     double? axisMinXOverride;
     double? axisMaxXOverride;
-    if (scrollController.hasClients) {
+    if (widget.data.scrollController != null && widget.data.scrollController!.hasClients) {
       final xAmount = widget.data.horizontalZoomConfig.amount;
       final showingXDelta = chartWidth / xAmount;
-      axisMinXOverride = scrollController.offset / xAmount;
+      axisMinXOverride = widget.data.scrollController!.offset / xAmount;
       axisMaxXOverride = axisMinXOverride + showingXDelta;
+      debugPrint('showingXDelta: $showingXDelta; axisMinXOverride: $axisMinXOverride; axisMaxXOverride: $axisMaxXOverride; offset: ${widget.data.scrollController!.offset}');
     }
 
     if (showLeftTitles) {
@@ -174,6 +175,7 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
           parentSize: constraints.biggest,
           axisMinOverride: axisMinXOverride,
           axisMaxOverride: axisMaxXOverride,
+          isScrollable: widget.data.titlesData.bottomTitles.isScrollable,
         ),
       );
     }
@@ -182,15 +184,24 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: scrollController,
-      builder: (context, child) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            return Stack(
-              children: stackWidgets(constraints),
-            );
-          },
+    if (widget.data.scrollController != null) {
+      return ListenableBuilder(
+        listenable: widget.data.scrollController!,
+        builder: (context, child) {
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                children: stackWidgets(constraints),
+              );
+            },
+          );
+        },
+      );
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          children: stackWidgets(constraints),
         );
       },
     );
