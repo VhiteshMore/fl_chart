@@ -60,7 +60,7 @@ class _SideTilesWidgetState extends State<SideTitlesWidget> {
     final offset = chartScrollOffset +
         ((chartMaxScrollOffset > titlesMaxScrollOffset
             ? chartMaxScrollOffset - titlesMaxScrollOffset
-            : titlesMaxScrollOffset - chartMaxScrollOffset) - interval) / 2;
+            : titlesMaxScrollOffset - chartMaxScrollOffset) - horizontalAxisInterval) / 2;
     if (offset > titlesMaxScrollOffset) {
       scrollController!.animateTo(titlesMaxScrollOffset, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut,);
     } else if (offset < widget.axisChartData.scrollController!.position.minScrollExtent) {
@@ -72,14 +72,14 @@ class _SideTilesWidgetState extends State<SideTitlesWidget> {
 
   @override
   void dispose() {
-    scrollController?.removeListener(scrollListener);
+    widget.axisChartData.scrollController?.removeListener(scrollListener);
+    widget.axisChartData.scrollController = null;
+    widget.axisChartData.scrollController?.dispose();
     scrollController?.dispose();
     super.dispose();
   }
 
-  double interval = 0;
-
-  List<AxisSideTitleMetaData> currentAxisPositions = [];
+  double horizontalAxisInterval = 0;
 
   bool get isHorizontal => widget.side == AxisSide.top || widget.side == AxisSide.bottom;
 
@@ -181,7 +181,7 @@ class _SideTilesWidgetState extends State<SideTitlesWidget> {
           axisMax - axisMin,
         );
     if (isHorizontal && widget.axisChartData.titlesData.bottomTitles.sideTitles.showTitles) {
-      this.interval = interval;
+      horizontalAxisInterval = interval;
     }
     if (isHorizontal && widget.axisChartData is BarChartData) {
       final barChartData = widget.axisChartData as BarChartData;
@@ -195,7 +195,6 @@ class _SideTilesWidgetState extends State<SideTitlesWidget> {
         final xValue = barChartData.barGroups[index].x;
         return AxisSideTitleMetaData(xValue.toDouble(), xLocation);
       }).toList();
-      currentAxisPositions = List.from(axisPositions);
     } else {
       final axisValues = AxisChartHelper().iterateThroughAxis(
         min: axisMin,
