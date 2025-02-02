@@ -102,6 +102,7 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
         ),
         child: switch (widget.data.scrollController != null) {
           true => SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
               controller: widget.data.scrollController,
               scrollDirection: Axis.horizontal,
               child: SizedBox(
@@ -128,7 +129,6 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
       final showingXDelta = chartWidth / xAmount;
       axisMinXOverride = widget.data.scrollController!.offset / xAmount;
       axisMaxXOverride = axisMinXOverride + showingXDelta;
-      debugPrint('showingXDelta: $showingXDelta; axisMinXOverride: $axisMinXOverride; axisMaxXOverride: $axisMaxXOverride; offset: ${widget.data.scrollController!.offset}');
     }
 
     if (showLeftTitles) {

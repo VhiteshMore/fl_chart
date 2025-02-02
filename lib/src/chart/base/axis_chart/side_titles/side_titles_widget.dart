@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:fl_chart/src/chart/base/axis_chart/axis_chart_helper.dart';
 import 'package:fl_chart/src/chart/base/axis_chart/side_titles/side_titles_flex.dart';
@@ -5,8 +7,10 @@ import 'package:fl_chart/src/extensions/bar_chart_data_extension.dart';
 import 'package:fl_chart/src/extensions/edge_insets_extension.dart';
 import 'package:fl_chart/src/extensions/fl_border_data_extension.dart';
 import 'package:fl_chart/src/extensions/fl_titles_data_extension.dart';
+import 'package:fl_chart/src/extensions/side_titles_extension.dart';
 import 'package:fl_chart/src/utils/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 class SideTitlesWidget extends StatefulWidget {
   const SideTitlesWidget({
@@ -37,24 +41,45 @@ class _SideTilesWidgetState extends State<SideTitlesWidget> {
   @override
   void initState() {
     if (widget.isScrollable) {
-      scrollController = ScrollController();
+      scrollController = ScrollController(
+          initialScrollOffset: (isHorizontal
+                  ? (widget.axisChartData.maxX - widget.axisChartData.minX)
+                  : (widget.axisChartData.maxY - widget.axisChartData.minY)) *
+              widget.axisChartData.horizontalZoomConfig.amount);
       if (widget.axisChartData.scrollController != null) {
-        widget.axisChartData.scrollController!.addListener(() {
-            scrollController!.animateTo(
-                widget.axisChartData.scrollController!.offset - widget.axisChartData.titlesData.leftTitles.sideTitles.reservedSize,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,);
-          },);
+        widget.axisChartData.scrollController!.addListener(scrollListener);
       }
     }
     super.initState();
   }
 
+  void scrollListener() {
+    final chartScrollOffset = widget.axisChartData.scrollController!.offset;
+    final chartMaxScrollOffset = widget.axisChartData.scrollController!.position.maxScrollExtent;
+    final titlesMaxScrollOffset = scrollController!.position.maxScrollExtent;
+    final offset = chartScrollOffset +
+        ((chartMaxScrollOffset > titlesMaxScrollOffset
+            ? chartMaxScrollOffset - titlesMaxScrollOffset
+            : titlesMaxScrollOffset - chartMaxScrollOffset) - interval) / 2;
+    if (offset > titlesMaxScrollOffset) {
+      scrollController!.animateTo(titlesMaxScrollOffset, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut,);
+    } else if (offset < widget.axisChartData.scrollController!.position.minScrollExtent) {
+      scrollController!.animateTo(widget.axisChartData.scrollController!.position.minScrollExtent, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut,);
+    } else {
+      scrollController!.animateTo(offset, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    }
+  }
+
   @override
   void dispose() {
+    scrollController?.removeListener(scrollListener);
     scrollController?.dispose();
     super.dispose();
   }
+
+  double interval = 0;
+
+  List<AxisSideTitleMetaData> currentAxisPositions = [];
 
   bool get isHorizontal => widget.side == AxisSide.top || widget.side == AxisSide.bottom;
 
@@ -155,7 +180,9 @@ class _SideTilesWidgetState extends State<SideTitlesWidget> {
           axisViewSize,
           axisMax - axisMin,
         );
-    // debugPrint('makeWidgets interval:$interval');
+    if (isHorizontal && widget.axisChartData.titlesData.bottomTitles.sideTitles.showTitles) {
+      this.interval = interval;
+    }
     if (isHorizontal && widget.axisChartData is BarChartData) {
       final barChartData = widget.axisChartData as BarChartData;
       if (barChartData.barGroups.isEmpty) {
@@ -168,6 +195,7 @@ class _SideTilesWidgetState extends State<SideTitlesWidget> {
         final xValue = barChartData.barGroups[index].x;
         return AxisSideTitleMetaData(xValue.toDouble(), xLocation);
       }).toList();
+      currentAxisPositions = List.from(axisPositions);
     } else {
       final axisValues = AxisChartHelper().iterateThroughAxis(
         min: axisMin,
@@ -201,7 +229,6 @@ class _SideTilesWidgetState extends State<SideTitlesWidget> {
             (metaData.axisValue < axisChartData.minY ||
                 metaData.axisValue > axisChartData.maxY);
         // if (isOutOfHorizontalAxis || isOutOfVerticalAxis) {
-        //   debugPrint('AxisValue: ${metaData.axisValue}; AxisPixelLocation: ${metaData.axisPixelLocation}');
         //   widget = Container();
         // } else {
           widget = sideTitles.getTitlesWidget(
@@ -235,7 +262,6 @@ class _SideTilesWidgetState extends State<SideTitlesWidget> {
     final axisViewSize = widget.isScrollable
         ? (widget.axisChartData.horizontalZoomConfig.amount)
         : (isHorizontal ? widget.parentSize.width : widget.parentSize.height);
-    // debugPrint('axisViewSize: $axisViewSize');
     final Widget child = Flex(
       direction: counterDirection,
       mainAxisSize: MainAxisSize.min,
@@ -278,12 +304,21 @@ class _SideTilesWidgetState extends State<SideTitlesWidget> {
     );
     return Align(
       alignment: alignment,
-      child: widget.isScrollable ? SingleChildScrollView(
-        hitTestBehavior: HitTestBehavior.deferToChild,
-        scrollDirection: direction,
-        controller: scrollController,
-        child: ClipRect(
-            child: child
+      child: widget.isScrollable ? Container(
+              margin: widget.isScrollable
+                  ? EdgeInsets.only(
+                      left: widget.axisChartData.titlesData.leftTitles.totalReservedSize,
+                      right: widget.axisChartData.titlesData.rightTitles.totalReservedSize,
+                    )
+                  : EdgeInsets.zero,
+              // constraints: BoxConstraints(maxWidth: widget.parentSize.width - 0),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.zero,
+          hitTestBehavior: HitTestBehavior.deferToChild,
+          scrollDirection: direction,
+          controller: scrollController,
+          physics: const ClampingScrollPhysics(),
+          child: child,
         ),
       ) : child,
     );
